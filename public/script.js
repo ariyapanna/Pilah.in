@@ -15,11 +15,16 @@ async function init() {
     startCameraBtn.disabled = true;
     scanBtn.disabled = true;
 
-    const modelURL = './assets/model/model.json';
-    const metadataURL = './assets/model/metadata.json';
+    const wasteModelURL = './assets/model-waste/model.json';
+    const wasteMetadataURL = './assets/model-waste/metadata.json';
 
-    model = await tmImage.load(modelURL, metadataURL);
-    maxPredictions = model.getTotalClasses();
+    const recycleModelURL = './assets/model-recycle/model.json';
+    const recycleMetadataURL = './assets/model-recycle/metadata.json';
+
+    wasteModel = await tmImage.load(wasteModelURL, wasteMetadataURL);
+    recycleModel = await tmImage.load(recycleModelURL, recycleMetadataURL);
+
+    maxPredictions = wasteModel.getTotalClasses();
 
     startCameraBtn.disabled = false;
 }
@@ -56,11 +61,18 @@ scanBtn.onclick = async () => {
     const ctx = canvas.getContext("2d");
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    const prediction = await model.predict(canvas);
-    const sorted = prediction.sort((a, b) => b.probability - a.probability);
-    const top = sorted[0];
+    // Predict jenis sampah
+    const wastePrediction = await wasteModel.predict(canvas);
+    const wasteTop = wastePrediction.sort((a, b) => b.probability - a.probability)[0];
 
-    alert(`🚮 Sampah terdeteksi: ${top.className}\n💯 Confidence: ${(top.probability*100).toFixed(1)}%`);
+    // Predict recyclable
+    const recyclePrediction = await recycleModel.predict(canvas);
+    const recycleTop = recyclePrediction.sort((a, b) => b.probability - a.probability)[0];
+
+    alert(
+        `🚮 Jenis: ${wasteTop.className}\n` +
+        `♻️ Recyclable: ${recycleTop.className}\n`
+    );
 
     scanBtn.disabled = false;
     toggleLoader(false);
